@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 700" role="img" aria-labelledby="title desc">
+<title id="title">Архітектура LumaFlow</title>
+<desc id="desc">Браузер звертається до HTTPS-шлюзу, шлюз працює зі SQLite та планувальником, який розподіляє задачі між двома постійними і двома додатковими серверами.</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto-start-reverse"><path d="M0 0L9 4.5L0 9z" fill="#4e7057"/></marker></defs>
+<style>text{font-family:Segoe UI,Arial,sans-serif;fill:#15241b}.title{font-size:36px;font-weight:700}.subtitle{font-size:16px;fill:#456050}.node{font-size:19px;font-weight:650}.detail{font-size:14px;fill:#40584a}.line{fill:none;stroke:#4e7057;stroke-width:2;marker-end:url(#arrow)}.two{marker-start:url(#arrow)}.label{font-size:13px;font-weight:650;fill:#375640}.base{fill:#fff;stroke:#b4c9b7;stroke-width:1.5}.scale{fill:#f5faee;stroke:#93a88a;stroke-dasharray:7 5;stroke-width:1.5}</style>
+<rect width="1140" height="700" fill="#f0f5ef"/>
+<text x="60" y="62" class="title">Архітектура LumaFlow</text>
+<text x="60" y="92" class="subtitle">Шумозаглушення зображень з асинхронною обробкою</text>
+<rect class="base" x="388" y="120" width="364" height="76" rx="13"/>
+<text x="570" y="150" text-anchor="middle" class="node">Браузер</text>
+<text x="570" y="174" text-anchor="middle" class="detail">Студія, історія, моніторинг</text>
+<path class="line two" d="M570 203V238"/>
+<text x="588" y="225" class="label">HTTPS · JSON і зображення</text>
+<rect class="base" x="340" y="245" width="460" height="90" rx="13"/>
+<text x="570" y="278" text-anchor="middle" class="node">Вебсервер / HTTPS API</text>
+<text x="570" y="304" text-anchor="middle" class="detail">Вхід, перевірка файлу, статус і результати</text>
+<rect class="base" x="875" y="245" width="215" height="90" rx="13"/>
+<text x="982" y="277" text-anchor="middle" class="node">SQLite</text>
+<text x="982" y="300" text-anchor="middle" class="detail">Акаунти, черга, історія</text>
+<text x="982" y="321" text-anchor="middle" class="detail">Оригінали й результати</text>
+<path class="line two" d="M807 290H869"/>
+<path class="line two" d="M570 342V380"/>
+<text x="588" y="366" class="label">Стани та призначення</text>
+<rect x="340" y="386" width="460" height="91" rx="13" fill="#d9edcf" stroke="#9db797" stroke-width="1.5"/>
+<text x="570" y="420" text-anchor="middle" class="node">Планувальник і балансувальник</text>
+<text x="570" y="446" text-anchor="middle" class="detail">FIFO, оцінка часу, розподіл, 2–4 сервери</text>
+<path class="line two" d="M807 434H982V342"/>
+<text x="829" y="458" class="label">Стани задач у БД</text>
+<path d="M570 478V514H165M570 514H975" fill="none" stroke="#4e7057" stroke-width="2"/>
+<path class="line" d="M165 514V550"/><path class="line" d="M435 514V550"/><path class="line" d="M705 514V550"/><path class="line" d="M975 514V550"/>
+<text x="574" y="501" class="label">RPC · файл, прогрес, результат і скасування</text>
+<rect class="base" x="45" y="557" width="240" height="78" rx="12"/><rect class="base" x="315" y="557" width="240" height="78" rx="12"/>
+<rect class="scale" x="585" y="557" width="240" height="78" rx="12"/><rect class="scale" x="855" y="557" width="240" height="78" rx="12"/>
+<text x="165" y="588" text-anchor="middle" class="node">app-1</text><text x="435" y="588" text-anchor="middle" class="node">app-2</text>
+<text x="705" y="588" text-anchor="middle" class="node">app-3</text><text x="975" y="588" text-anchor="middle" class="node">app-4</text>
+<text x="165" y="612" text-anchor="middle" class="detail">Постійний сервер</text><text x="435" y="612" text-anchor="middle" class="detail">Постійний сервер</text>
+<text x="705" y="612" text-anchor="middle" class="detail">Додатковий сервер</text><text x="975" y="612" text-anchor="middle" class="detail">Додатковий сервер</text>
+<text x="45" y="670" class="subtitle">Кожен сервер запускає один дочірній процес Pillow для поточної задачі. У режимі Docker кожен сервер є контейнером.</text>
+</svg>

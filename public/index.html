@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Шумозаглушення та відновлення деталей фотографій.">
+  <meta name="theme-color" content="#131618">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <title>LumaFlow · Реставрація зображень</title>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="top-inner">
+      <button class="brand" data-view="studio" type="button"><img src="/favicon.svg" alt="" width="33" height="33"><span>Luma<span class="brand-accent">Flow</span></span></button>
+      <nav aria-label="Основна навігація">
+        <button class="nav-button active" data-view="studio" type="button">Студія</button>
+        <button class="nav-button" data-view="history" type="button">Історія <span class="count" id="history-count" hidden></span></button>
+        <button class="nav-button" data-view="admin" id="admin-tab" type="button" hidden>Моніторинг</button>
+      </nav>
+      <div class="account-area">
+        <span class="health" id="service-health" title="Доступні сервери обробки"><i></i><span>Перевірка</span></span>
+        <button class="button subtle sign-in" id="account-button" type="button">Увійти</button>
+        <span id="account-name" class="account-name" hidden></span>
+        <button class="button subtle" id="logout" type="button" hidden>Вийти</button>
+      </div>
+    </div>
+  </header>
+  <main class="page">
+    <div id="notification" class="notice" role="status" hidden></div>
+    <section id="studio-view">
+      <div class="page-heading">
+        <div><h1>Реставрація зображень</h1><p>Прибери цифровий шум і віднови чіткість деталей.</p></div>
+        <button class="button subtle" id="demo-button" type="button"><span aria-hidden="true">◇</span> Спробувати демо</button>
+      </div>
+      <div class="studio-grid">
+        <aside class="panel settings" aria-label="Параметри обробки">
+          <h2>Налаштування</h2>
+          <div class="form-part">
+            <label class="field-title" for="image-input">Вхідне зображення</label>
+            <div id="drop-zone" class="drop-zone">
+              <input id="image-input" type="file" tabindex="-1" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+              <button id="file-button" type="button" class="drop-button">
+                <span class="upload-icon" aria-hidden="true">↑</span>
+                <strong id="file-label">Вибрати файл</strong>
+                <span id="file-meta">або перетягни сюди</span>
+              </button>
+            </div>
+            <p class="hint">JPG, PNG, WebP · до 10 МБ і 6 Мп</p>
+          </div>
+          <fieldset class="form-part profiles">
+            <legend class="field-title">Інтенсивність обробки</legend>
+            <label class="profile"><input type="radio" name="profile" value="light"><span><b>Легка</b><small>Для слабкого шуму · 3×3</small></span></label>
+            <label class="profile"><input type="radio" name="profile" value="balanced" checked><span><b>Збалансована</b><small>Для більшості фото · 5×5</small></span></label>
+            <label class="profile"><input type="radio" name="profile" value="deep"><span><b>Глибока</b><small>Для сильного шуму · 7×7, 2 проходи</small></span></label>
+          </fieldset>
+          <p id="upload-error" class="form-error" role="alert" hidden></p>
+          <button class="button primary start" id="start-job" type="button"><span aria-hidden="true">▷</span> Запустити обробку</button>
+          <p class="hint limit">До 45 с обчислення на одну задачу</p>
+        </aside>
+        <div class="workspace">
+          <section class="panel preview-panel" aria-labelledby="preview-title">
+            <div class="panel-head">
+              <div class="preview-heading"><h2 id="preview-title">Попередній перегляд</h2><span id="preview-meta">Демонстраційний кадр</span></div>
+              <a id="download" class="button subtle" href="/" hidden>Завантажити JPG <span aria-hidden="true">↓</span></a>
+            </div>
+            <div class="preview-outer">
+              <div class="preview" id="preview">
+                <img id="before" src="/sample-preview.jpg" alt="Початкове зображення">
+                <img id="after" alt="Результат обробки" hidden>
+                <span class="preview-tag before-tag" id="before-tag" hidden>Оригінал</span>
+                <span class="preview-tag after-tag" id="after-tag" hidden>Результат</span>
+                <div id="divider" class="divider" aria-hidden="true" hidden><span>‹ ›</span></div>
+                <input id="comparison" type="range" min="0" max="100" value="50" aria-label="Позиція межі між оригіналом і результатом" hidden>
+              </div>
+            </div>
+          </section>
+          <section class="panel task-panel" aria-labelledby="task-heading">
+            <div class="task-row">
+              <div class="task-icon" aria-hidden="true">◷</div>
+              <div class="task-copy"><h2 id="task-heading">Поточна задача</h2><p id="task-details">Тут з’явиться прогрес після запуску обробки.</p></div>
+              <button id="cancel-job" type="button" class="button subtle danger" hidden>Скасувати</button>
+            </div>
+            <div id="progress-row" class="progress-row" hidden><progress id="job-progress" max="100" value="0" aria-label="Прогрес задачі"></progress><span id="job-percent">0%</span></div>
+          </section>
+        </div>
+      </div>
+    </section>
+    <section id="history-view" hidden>
+      <div class="page-heading">
+        <div><h1>Історія задач</h1><p>Переглядай статус, відкривай і завантажуй результати.</p></div>
+        <button class="button primary" data-view="studio" type="button">＋ Нова задача</button>
+      </div>
+      <div class="panel table-panel">
+        <div id="history-empty" class="empty"><h2>Історія поки порожня</h2><p>Запусти першу обробку в студії.</p></div>
+        <div class="table-wrap" id="history-table" hidden>
+          <table><thead><tr><th>Зображення</th><th>Статус</th><th>Сервер</th><th>Створено</th><th>Дії</th></tr></thead><tbody id="history-body"></tbody></table>
+        </div>
+      </div>
+    </section>
+    <section id="admin-view" hidden>
+      <div class="page-heading"><div><h1>Моніторинг серверів</h1><p>Завантаження, процеси й стан черги.</p></div>
+        <div class="admin-controls"><span class="mode" id="admin-mode"></span><button class="button primary" id="demo-load" type="button">Запустити 6 демозадач</button></div>
+      </div>
+      <p id="admin-error" class="form-error" hidden></p>
+      <div id="system-counts" class="system-counts"></div>
+      <div id="worker-cards" class="worker-grid"></div>
+      <section class="panel table-panel admin-table">
+        <div class="panel-head"><h2>Активні задачі</h2></div>
+        <div class="table-wrap"><table><thead><tr><th>Задача</th><th>Користувач</th><th>Сервер</th><th>Стан</th><th>Очікування</th></tr></thead><tbody id="admin-active"></tbody></table></div>
+      </section>
+      <section class="panel table-panel admin-table">
+        <div class="panel-head"><h2>Останні завершені задачі</h2></div>
+        <div class="table-wrap"><table><thead><tr><th>Задача</th><th>Користувач</th><th>Сервер</th><th>Результат</th><th>Дії</th></tr></thead><tbody id="admin-recent"></tbody></table></div>
+      </section>
+    </section>
+    <footer class="footer"><span>LumaFlow</span><span>Локальна студія обробки зображень</span></footer>
+  </main>
+  <dialog id="auth-dialog" aria-labelledby="auth-title">
+    <form id="auth-form">
+      <div class="dialog-head"><h2 id="auth-title">Вхід до LumaFlow</h2><button class="icon-button" id="close-auth" type="button" aria-label="Закрити">×</button></div>
+      <div class="auth-tabs"><button id="login-tab" type="button" class="active">Вхід</button><button id="register-tab" type="button">Реєстрація</button></div>
+      <label for="username">Логін</label><input id="username" autocomplete="username" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]{3,24}" placeholder="Наприклад, photo_lab">
+      <label for="password">Пароль</label><input id="password" type="password" autocomplete="current-password" required minlength="8" maxlength="128">
+      <p id="auth-error" class="form-error" role="alert" hidden></p>
+      <button id="auth-submit" class="button primary" type="submit">Увійти</button>
+    </form>
+  </dialog>
+</body>
+</html>
