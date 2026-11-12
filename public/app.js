@@ -11,9 +11,13 @@ const labels = {
 };
 const profiles = {light: "Легка", balanced: "Збалансована", deep: "Глибока"};
 const model = {user: null, file: null, objectUrl: null, jobId: null, jobs: [], view: "studio",
-  authMode: "login", afterAuth: null, refreshing: false, selection: 0};
+  authMode: "login", afterAuth: null, selection: 0};
 const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
 const date = new Intl.DateTimeFormat("uk-UA", {dateStyle: "short", timeStyle: "medium"});
+const refreshInterval = 5000;
+let refreshTimer;
+let refreshRequest = Promise.resolve();
+let refreshRevision = 0;
 
 function element(tag, text, cls) {
   const node = document.createElement(tag);
@@ -94,8 +98,14 @@ function showView(view) {
     else item.removeAttribute("aria-current");
   }
   notify();
-  if (view === "admin") refresh();
-  if (view === "history") renderHistory();
+  if (view === "history") {
+    renderHistory();
+    refresh();
+  } else if (view === "admin") {
+    refresh(false);
+  } else {
+    scheduleRefresh();
+  }
 }
 
 function compare(before, after) {
@@ -149,6 +159,7 @@ function selectJob(id) {
   byId("preview").style.setProperty("--split", "50%");
   showView("studio");
   renderTask();
+  refresh();
 }
 
 async function loadFile(file) {
@@ -181,6 +192,7 @@ async function loadFile(file) {
     setText("preview-meta", file.name);
     compare(url);
     renderTask();
+    scheduleRefresh();
   } catch (error) {
     if (sequence === model.selection) fieldError("upload-error", error.name === "EncodingError" ? "Файл не вдалося відкрити." : error.message);
   } finally {
@@ -243,7 +255,6 @@ async function startJob() {
     model.jobs.unshift(response.job);
     selectJob(response.job.id);
     renderHistory();
-    refresh();
   } catch (error) {
     fieldError("upload-error", error.message);
   } finally {
@@ -382,18 +393,48 @@ function renderAdmin(data) {
   }
 }
 
-async function refresh() {
-  if (model.refreshing) return;
-  model.refreshing = true;
+function isMonitoring() {
+  return model.user?.role === "admin" && model.view === "admin";
+}
+
+function shouldPollJobs() {
+  return Boolean(model.user) && model.jobs.some((job) => active.has(job.status) &&
+    (model.view === "history" || (model.view === "studio" && job.id === model.jobId)));
+}
+
+function scheduleRefresh() {
+  clearTimeout(refreshTimer);
+  if (!document.hidden && (shouldPollJobs() || isMonitoring())) {
+    refreshTimer = setTimeout(() => {
+      if (!document.hidden && (shouldPollJobs() || isMonitoring())) refresh(false);
+    }, refreshInterval);
+  }
+}
+
+function refresh(loadJobs = true) {
+  clearTimeout(refreshTimer);
+  const revision = ++refreshRevision;
+  refreshRequest = refreshRequest.then(() => {
+    if (revision === refreshRevision) return updateStatus(loadJobs, revision);
+  });
+  return refreshRequest;
+}
+
+async function updateStatus(loadJobs, revision) {
+  const user = model.user;
+  const shouldLoadJobs = user && (loadJobs || shouldPollJobs());
   try {
-    const pending = [json("/health"), model.user ? json("/api/jobs") : Promise.resolve(null)];
-    if (model.view === "admin") pending.push(json("/api/admin"));
-    const [health, history, system] = await Promise.all(pending);
+    const [health, history, system] = await Promise.all([
+      json("/health"),
+      shouldLoadJobs ? json("/api/jobs") : null,
+      isMonitoring() ? json("/api/admin") : null,
+    ]);
+    if (revision !== refreshRevision || user !== model.user) return;
     const healthElement = byId("service-health");
     healthElement.classList.toggle("online", health.ready_workers > 0);
     const count = health.ready_workers;
     healthElement.lastElementChild.textContent = "HTTPS · " + count + (count === 1 ? " сервер" : count ? " сервери" : " серверів");
-    if (model.user && history) {
+    if (history) {
       model.jobs = history.jobs;
       if (model.jobId && !model.jobs.some((job) => job.id === model.jobId)) {
         model.jobId = null;
@@ -403,8 +444,9 @@ async function refresh() {
       renderTask();
       renderHistory();
     }
-    if (system && model.view === "admin") renderAdmin(system);
+    if (system && isMonitoring()) renderAdmin(system);
   } catch (error) {
+    if (revision !== refreshRevision || user !== model.user) return;
     if (error.status === 401) {
       resetSession();
       notify("Сеанс завершився. Увійди ще раз.", true);
@@ -414,11 +456,12 @@ async function refresh() {
       healthElement.lastElementChild.textContent = "Зв’язок втрачено";
     }
   } finally {
-    model.refreshing = false;
+    if (revision === refreshRevision) scheduleRefresh();
   }
 }
 
 function resetSession() {
+  refreshRevision += 1;
   setUser(null);
   model.selection += 1;
   releaseFile();
@@ -483,4 +526,8 @@ zone.addEventListener("drop", (event) => {
   loadFile(event.dataTransfer.files[0]);
 });
 json("/api/session").then((session) => setUser(session.user)).catch(() => {}).finally(refresh);
-setInterval(refresh, 950);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) clearTimeout(refreshTimer);
+  else if (model.view === "history") refresh();
+  else if (shouldPollJobs() || isMonitoring()) refresh(false);
+});
