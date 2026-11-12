@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 760" role="img" aria-labelledby="title desc">
+<title id="title">LumaFlow — контейнерний режим</title>
+<desc id="desc">Браузер звертається через HTTPS до Python-вебсервера. У ньому API і планувальник використовують SQLite. Планувальник розподіляє задачі між двома базовими і двома додатковими серверами та керує ними через Docker.</desc>
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="#416c52"/></marker></defs>
+<style>text{font-family:Segoe UI,Arial,sans-serif;fill:#1c3021}.title{font-size:35px;font-weight:700}.head{font-size:19px;font-weight:650}.sub{font-size:15px;fill:#3e5e49}.small{font-size:13px;fill:#3e5e49}.box{fill:#fff;stroke:#abc1ad;stroke-width:1.5}.app{fill:#f7fcf4;stroke:#83a58a;stroke-width:1.5}.scale{stroke-dasharray:7 5}.flow{fill:none;stroke:#416c52;stroke-width:2;marker-end:url(#a)}.two{marker-start:url(#a)}.plain{fill:none;stroke:#416c52;stroke-width:2}.control{stroke-dasharray:6 5}</style>
+<rect width="1180" height="760" fill="#f0f5ee"/>
+<text x="36" y="50" class="title">LumaFlow · контейнерний режим</text>
+<rect x="34" y="184" width="1112" height="544" rx="20" fill="#e4ede1" stroke="#c1d2bf"/>
+<text x="55" y="212" class="head">Windows-ноутбук</text>
+<rect x="412" y="76" width="356" height="68" rx="11" class="box"/>
+<text x="590" y="103" text-anchor="middle" class="head">Браузер</text>
+<text x="590" y="126" text-anchor="middle" class="sub">HTML · CSS · JavaScript</text>
+<path d="M590 150V228" class="flow two"/>
+<text x="610" y="171" class="sub">HTTPS · localhost:8443</text>
+<rect x="300" y="235" width="580" height="201" rx="14" fill="#f4faf0" stroke="#a4bda4"/>
+<text x="590" y="260" text-anchor="middle" class="head">Вебсервер Python</text>
+<rect x="326" y="275" width="528" height="55" rx="8" class="box"/>
+<text x="590" y="298" text-anchor="middle" class="head">API</text>
+<text x="590" y="319" text-anchor="middle" class="small">вхід · перевірка файлу · статус · результати</text>
+<path d="M590 333V346" class="flow"/>
+<rect x="326" y="352" width="528" height="60" rx="8" fill="#d4e9cb" stroke="#90af88"/>
+<text x="590" y="376" text-anchor="middle" class="head">Планувальник і балансувальник</text>
+<text x="590" y="397" text-anchor="middle" class="small">FIFO · вибір вільного сервера · ETA · масштабування 2–4</text>
+<rect x="908" y="263" width="209" height="100" rx="9" class="box"/>
+<text x="1012" y="292" text-anchor="middle" class="head">SQLite</text>
+<text x="1012" y="317" text-anchor="middle" class="small">акаунти · задачі · сесії</text>
+<text x="1012" y="339" text-anchor="middle" class="small">оригінали · JPG-результати</text>
+<path d="M862 305H901" class="flow two"/>
+<path d="M862 380H1012V370" class="flow two"/>
+<rect x="63" y="299" width="210" height="103" rx="10" class="box"/>
+<text x="168" y="329" text-anchor="middle" class="head">Docker Desktop</text>
+<text x="168" y="353" text-anchor="middle" class="sub">WSL 2</text>
+<text x="168" y="378" text-anchor="middle" class="small">docker run / docker stop</text>
+<path d="M319 377H281" class="flow control"/>
+<path d="M168 409V512" class="flow control"/>
+<rect x="55" y="519" width="1070" height="181" rx="12" fill="#dcebd8" stroke="#abc4ab"/>
+<text x="75" y="545" class="head">Linux-контейнери</text>
+<path d="M590 420V481H193M590 481H985" class="plain"/>
+<text x="608" y="462" class="small">локальний HTTP з токеном · 127.0.0.1:18451–18454</text>
+<path d="M193 481V556M457 481V556M721 481V556M985 481V556" class="plain"/>
+<path d="M193 549V562" class="flow"/><path d="M457 549V562" class="flow"/><path d="M721 549V562" class="flow"/><path d="M985 549V562" class="flow"/>
+<rect x="75" y="569" width="236" height="87" rx="9" class="app"/><rect x="339" y="569" width="236" height="87" rx="9" class="app"/>
+<rect x="603" y="569" width="236" height="87" rx="9" class="app scale"/><rect x="867" y="569" width="236" height="87" rx="9" class="app scale"/>
+<text x="193" y="600" text-anchor="middle" class="head">app-1</text><text x="457" y="600" text-anchor="middle" class="head">app-2</text>
+<text x="721" y="600" text-anchor="middle" class="head">app-3</text><text x="985" y="600" text-anchor="middle" class="head">app-4</text>
+<text x="193" y="630" text-anchor="middle" class="sub">базовий · 1 задача</text><text x="457" y="630" text-anchor="middle" class="sub">базовий · 1 задача</text>
+<text x="721" y="630" text-anchor="middle" class="sub">додатковий · 1 задача</text><text x="985" y="630" text-anchor="middle" class="sub">додатковий · 1 задача</text>
+<text x="75" y="681" class="small">Кожен сервер запускає окремий процес Pillow для своєї задачі. Ліміт обчислення — 45 секунд.</text>
+</svg>

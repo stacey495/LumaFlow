@@ -2,13 +2,13 @@ import argparse
 import json
 import os
 import secrets
-import shutil
 import ssl
 import subprocess
 import sys
 import time
 import urllib.request
 from pathlib import Path
+from types import SimpleNamespace
 
 from lumaflow.config import MIN_WORKERS, ROOT
 
@@ -137,6 +137,27 @@ def stop(directory):
     raise RuntimeError("Служба ще завершує роботу. Перевір журнал у .runtime.")
 
 
+def build_image():
+    from lumaflow.scheduler import DOCKER_IMAGE, docker_engine
+
+    docker_engine()
+    return subprocess.run(["docker", "build", "-t", DOCKER_IMAGE, str(ROOT)], cwd=ROOT).returncode
+
+
+def docker_demo(directory, current, show_browser):
+    from lumaflow.scheduler import DOCKER_IMAGE, docker_engine
+
+    docker_engine()
+    images = subprocess.run(["docker", "image", "ls", "--filter", f"reference={DOCKER_IMAGE}", "--format", "{{.ID}}"],
+                            capture_output=True, text=True, check=True, timeout=15)
+    if not images.stdout.strip() and build_image() != 0:
+        raise RuntimeError("Docker не зміг зібрати образ. Перевір вивід збірки та доступ до Docker Hub і PyPI.")
+    if current.get("mode") == "native" and health(directory, current["port"]).get("instance") == current["instance"]:
+        stop(directory)
+    start(SimpleNamespace(data=directory, mode="docker", port=8443, worker_port=18451,
+                          foreground=False, open=show_browser))
+
+
 def main():
     parser = argparse.ArgumentParser(description="Керування LumaFlow")
     parser.add_argument("--data", type=Path, default=ROOT / ".runtime")
@@ -147,6 +168,8 @@ def main():
     run.add_argument("--worker-port", type=int, default=18451)
     run.add_argument("--open", action="store_true")
     run.add_argument("--foreground", action="store_true")
+    demo = commands.add_parser("docker-demo")
+    demo.add_argument("--open", action="store_true")
     for name in ("stop", "status", "open", "admin", "build"):
         commands.add_parser(name)
     options = parser.parse_args()
@@ -169,11 +192,10 @@ def main():
             account = json.loads((options.data / "admin.json").read_text(encoding="utf-8"))
             print(f"{account['username']}\n{account['password']}")
         elif options.command == "build":
-            from lumaflow.scheduler import DOCKER_IMAGE
-            if not shutil.which("docker"):
-                raise RuntimeError("Потрібен запущений Docker Desktop.")
-            return subprocess.run(["docker", "build", "-t", DOCKER_IMAGE, str(ROOT)], cwd=ROOT).returncode
-    except (OSError, RuntimeError) as error:
+            return build_image()
+        elif options.command == "docker-demo":
+            docker_demo(options.data, current, options.open)
+    except (OSError, RuntimeError, subprocess.SubprocessError) as error:
         print(error, file=sys.stderr)
         return 1
     return 0

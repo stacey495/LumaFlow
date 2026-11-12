@@ -1,13 +1,28 @@
 param(
-    [ValidateSet("start","stop","status","open","admin","build")]
+    [ValidateSet("start","stop","status","open","admin","build","verify","docker-demo")]
     [string]$Action = "start",
     [ValidateSet("native","docker")]
     [string]$Mode = "native",
-    [switch]$NoBrowser
+    [switch]$NoBrowser,
+    [switch]$Live
 )
 $ErrorActionPreference = "Stop"
 $env:PYTHONUTF8 = "1"
 $env:PYTHONDONTWRITEBYTECODE = "1"
+if ($Mode -eq "docker" -or $Action -in @("build", "docker-demo")) {
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        $dockerCandidates = @(
+            (Join-Path $env:ProgramFiles "Docker\Docker\resources\bin"),
+            (Join-Path $env:LOCALAPPDATA "Programs\DockerDesktop\resources\bin")
+        )
+        foreach ($dockerBin in $dockerCandidates) {
+            if (Test-Path -LiteralPath (Join-Path $dockerBin "docker.exe")) {
+                $env:PATH = "$dockerBin;$env:PATH"
+                break
+            }
+        }
+    }
+}
 $project = $PSScriptRoot
 $pythonPath = $null
 $bundled = $env:CODEX_PRIMARY_RUNTIME_PYTHON
@@ -49,9 +64,14 @@ if (-not $pythonPath) {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 $commandArgs = @((Join-Path $project "manage.py"), $Action)
+if ($Action -eq "verify") {
+    $commandArgs = @((Join-Path $project "verify.py"))
+    if ($Live -or $Mode -eq "docker") { $commandArgs += @("--live", $Mode) }
+}
 if ($Action -eq "start") {
     $commandArgs += @("--mode", $Mode)
     if (-not $NoBrowser) { $commandArgs += "--open" }
 }
+if ($Action -eq "docker-demo" -and -not $NoBrowser) { $commandArgs += "--open" }
 & $pythonPath @commandArgs
 exit $LASTEXITCODE

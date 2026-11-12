@@ -342,13 +342,19 @@ class Scheduler:
         return estimates
 
 
-def prepare_docker(directory):
+def docker_engine():
     if not shutil.which("docker"):
         raise RuntimeError("Команду docker не знайдено. Запусти Docker Desktop з WSL 2.")
     result = subprocess.run(["docker", "info", "--format", "{{.OSType}}"], capture_output=True, text=True,
                             timeout=15, creationflags=NO_WINDOW)
-    if result.returncode or result.stdout.strip() != "linux":
+    if result.returncode:
+        raise RuntimeError("Запусти Docker Desktop і дочекайся готовності рушія.")
+    if result.stdout.strip() != "linux":
         raise RuntimeError("Docker Desktop має працювати в режимі Linux-контейнерів.")
+
+
+def prepare_docker(directory):
+    docker_engine()
     label = "lumaflow.project=" + hashlib.sha256(str(directory).encode()).hexdigest()[:12]
     result = subprocess.run(["docker", "ps", "-aq", "--filter", f"label={label}"],
                             check=True, capture_output=True, text=True, timeout=15, creationflags=NO_WINDOW)
