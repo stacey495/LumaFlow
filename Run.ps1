@@ -25,41 +25,33 @@ if ($Mode -eq "docker" -or $Action -in @("build", "docker-demo")) {
 }
 $project = $PSScriptRoot
 $pythonPath = $null
-$bundled = $env:CODEX_PRIMARY_RUNTIME_PYTHON
-$savedPython = Join-Path $project ".runtime\python-path.txt"
-if (-not $bundled -and (Test-Path -LiteralPath $savedPython)) {
-    $bundled = (Get-Content -LiteralPath $savedPython -TotalCount 1).Trim()
+$venvPython = Join-Path $project ".venv\Scripts\python.exe"
+$systemPython = Get-Command python -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+$pythonPathFile = Join-Path $project ".runtime\python-path.txt"
+$savedPython = $null
+if (Test-Path -LiteralPath $pythonPathFile -PathType Leaf) {
+    $savedPython = (Get-Content -LiteralPath $pythonPathFile -TotalCount 1).Trim()
 }
-if (-not $bundled) {
-    $node = Get-Command node -ErrorAction SilentlyContinue
-    if ($node) {
-        $bundled = Join-Path (Split-Path (Split-Path (Split-Path $node.Source))) "python\python.exe"
-    }
-}
-if (-not $bundled -or -not (Test-Path -LiteralPath $bundled)) {
-    try {
-        $package = Get-AppxPackage -Name "OpenAI.CodexPrimaryRuntime*" -ErrorAction Stop | Select-Object -First 1
-        if ($package) { $bundled = Join-Path $package.InstallLocation "dependencies\python\python.exe" }
-    } catch {
-        $bundled = $null
-    }
-}
-$systemPython = Get-Command python -ErrorAction SilentlyContinue
-$candidates = @((Join-Path $project ".venv\Scripts\python.exe"), $bundled, $systemPython.Source)
+$candidates = @($venvPython, $systemPython.Source, $savedPython)
 foreach ($candidate in $candidates) {
-    if ($candidate -and (Test-Path -LiteralPath $candidate)) {
+    if (-not $candidate -or -not (Test-Path -LiteralPath $candidate -PathType Leaf)) { continue }
+    try {
         & $candidate -c "import importlib.util as u, sys; sys.exit(not (sys.version_info >= (3, 12) and u.find_spec('PIL') and u.find_spec('cryptography')))"
         if ($LASTEXITCODE -eq 0) {
             $pythonPath = $candidate
             break
         }
+    } catch {
+        continue
     }
 }
 if (-not $pythonPath) {
     if (-not $systemPython) { throw "Python 3.12+ is required." }
+    & $systemPython.Source -c "import sys; sys.exit(sys.version_info < (3, 12))"
+    if ($LASTEXITCODE -ne 0) { throw "Python 3.12+ is required." }
     & $systemPython.Source -m venv (Join-Path $project ".venv")
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    $pythonPath = Join-Path $project ".venv\Scripts\python.exe"
+    $pythonPath = $venvPython
     & $pythonPath -m pip install -r (Join-Path $project "requirements.txt")
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
